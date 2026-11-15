@@ -295,8 +295,8 @@ class AlbumTab extends StatelessWidget {
       padding: const EdgeInsets.all(8),
       // Số cột cố định. Muốn tự co giãn theo bề ngang màn hình thì dùng
       // SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 180).
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 180,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
         childAspectRatio: 0.78, // rộng / cao — sai số này là nguyên nhân tràn ô

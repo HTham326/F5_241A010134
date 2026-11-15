@@ -123,7 +123,11 @@ class ProductListTab extends StatefulWidget {
 class _ProductListTabState extends State<ProductListTab> {
   // Tạo bản sao để có thể thêm/xóa mà không đụng vào dữ liệu gốc
   final List<SanPham> _ds = List.of(duLieuMau);
-  int _dem = 0;
+  final TextEditingController _timKiemController = TextEditingController();
+  
+  String _tuKhoa = '';
+
+  int _dem = 0; 
  
   void _them() {
     setState(() {
@@ -138,6 +142,16 @@ class _ProductListTabState extends State<ProductListTab> {
         ),
       );
     });
+  }
+
+  List<SanPham> get _dsTimKiem {
+    if(_tuKhoa.isEmpty) {
+      return _ds;
+    }
+
+    return _ds.where((sp) {
+      return sp.ten.toLowerCase().contains(_tuKhoa.toLowerCase());
+    }).toList();
   }
  
   @override
@@ -157,46 +171,111 @@ class _ProductListTabState extends State<ProductListTab> {
     return Scaffold(
       // ListView.builder chỉ dựng những item đang nhìn thấy (lazy),
       // giống cách RecyclerView tái sử dụng ViewHolder bên Android.
-      body: ListView.builder(
-        padding: const EdgeInsets.all(8),
-        itemCount: _ds.length,
-        itemBuilder: (context, index) {
-          final sp = _ds[index];
-          return Dismissible(
-            // key PHẢI duy nhất và ổn định, nếu không Flutter sẽ xóa nhầm dòng
-            key: ValueKey('${sp.ten}_$index'),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              color: Colors.red,
-              child: const Icon(Icons.delete, color: Colors.white),
-            ),
-            onDismissed: (_) {
-              setState(() => _ds.removeAt(index));
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Đã xóa ${sp.ten}')),
-              );
-            },
-            child: Card(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              child: ListTile(
-                leading: AnhSanPham(duongDan: sp.anh, kichThuoc: 56),
-                title: Text(sp.ten,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                subtitle: Text(sp.moTa,
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                trailing: Text(
-                  dinhDangGia(sp.gia),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Bạn chọn: ${sp.ten}')),
+      body: Column(
+        children: [
+          // Ô tìm kiếm sản phẩm
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              controller: _timKiemController,
+              decoration: InputDecoration(
+                hintText: 'Nhập tên sản phẩm cần tìm...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _tuKhoa.isNotEmpty
+                    ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _timKiemController.clear();
+                        setState(() {
+                          _tuKhoa = '';
+                        });
+                      },
+                    )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
+              onChanged: (value) {
+                setState(() {
+                  _tuKhoa = value;
+                });
+              },
             ),
-          );
-        },
+          ),
+
+          // Danh sách sản phẩm sau khi tìm kiếm
+          Expanded(
+            child: _dsTimKiem.isEmpty
+                ? const Center(
+                  child: Text('Không tìm thấy sản phẩm phù hợp'),
+                )
+                : ListView.builder(
+                  padding: const EdgeInsets.all(8),
+                  itemCount: _dsTimKiem.length,
+                  itemBuilder: (context, index) {
+                    final sp = _dsTimKiem[index];
+
+                    return Dismissible(
+                      key: ValueKey(sp.ten),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        color: Colors.red,
+                        child: const Icon(
+                          Icons.delete,
+                          color: Colors.white,
+                        ),
+                      ),
+                      onDismissed: (_) {
+                        setState(() {
+                          _ds.remove(sp);
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Đã xoá ${sp.ten}'),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        child: ListTile(
+                          leading: AnhSanPham(
+                            duongDan: sp.anh,
+                            kichThuoc: 56,
+                          ),
+                          title: Text(
+                            sp.ten,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: Text(
+                            sp.moTa,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          trailing: Text(
+                            dinhDangGia(sp.gia),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Bạn chọn: ${sp.ten}'),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+          ),
+        ],
       ),
       floatingActionButton:
           FloatingActionButton(onPressed: _them, child: const Icon(Icons.add)),
